@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Чат с ботом-калькулятором</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&family=Poppins:wght@400;700&display=swap">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Quicksand', sans-serif; /* Задаем основной шрифт */
+    }
+    .chat-container {
+      width: 100%;
+      height: 100%;
+      background-color: #2a2a2a;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      background-color: #383838;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      font-family: 'Poppins', sans-serif; /* Задаем шрифт заголовка */
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: scroll;
+      padding: 10px;
+    }
+    .message {
+      margin-bottom: 10px;
+    }
+    .user-message {
+      text-align: right;
+    }
+    .bot-message {
+      text-align: left;
+    }
+    .message-content {
+      background-color: rgb(72, 72, 72);
+      padding: 8px 12px;
+      border-radius: 5px;
+      display: inline-block;
+      max-width: 70%;
+      overflow: hidden;
+      color: white;
+      opacity: 0; /* Начальное значение прозрачности */
+      animation: fadeIn 1s ease forwards; /* Анимация появления */
+    }
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+    .input-container {
+      padding: 10px;
+      border-top: 1px solid #ddd;
+      display: flex;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+      color: white;
+      background-color: rgb(72, 72, 72);
+    }
+    input[type="text"], input[type="submit"] {
+      margin-right: 10px;
+    }
+    input[type="submit"] {
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">MathAI [BETA 1.1]</div>
+  <div class="chat-messages" id="chatMessages">
+    <!-- Приветственное сообщение -->
+    <div class="message bot-message">
+      <span class="message-content">Здравствуйте, я MathAI я бот AI могу умножать делить суммировать вычислять.</span>
+    </div>
+  </div>
+  <div class="input-container">
+    <input type="text" id="userInput" placeholder="Введите пример (например: 2+2)">
+  </div>
+</div>
+
+<script>
+  var userInput = document.getElementById('userInput');
+  userInput.addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+  function sendMessage() {
+    var userInputValue = userInput.value.trim();
+    var chatMessages = document.getElementById('chatMessages');
+
+    if (userInputValue !== '') {
+      var userMessageElement = document.createElement('div');
+      userMessageElement.classList.add('message', 'user-message');
+      userMessageElement.innerHTML = '<span class="message-content">' + userInputValue + '</span>';
+      chatMessages.appendChild(userMessageElement);
+
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Simulate bot response after typing animation
+      setTimeout(function() {
+        var botMessageElement = document.createElement('div');
+        botMessageElement.classList.add('message', 'bot-message');
+        var botResponse = calculateResult(userInputValue);
+        var botMessageContent = document.createElement('span');
+        botMessageContent.classList.add('message-content');
+        botMessageElement.appendChild(botMessageContent);
+        chatMessages.appendChild(botMessageElement);
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Type response gradually
+        typeMessage(botResponse, botMessageContent);
+      }, 1000); // Adjust the delay as needed
+    }
+
+    // Clear input field after sending message
+    userInput.value = '';
+  }
+
+  function typeMessage(message, targetElement) {
+    var index = 0;
+    var typingInterval = setInterval(function() {
+      if (index < message.length) {
+        targetElement.textContent += message.charAt(index);
+        index++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 50);
+  }
+
+  function calculateResult(expression) {
+    try {
+      var result = eval(expression);
+      return 'Ответ: ' + result;
+    } catch (error) {
+      return 'Извините я вас не понимаю.';
+    }
+  }
+  const express = require('express');
+const bodyParser = require('body-parser');
+const dialogflow = require('dialogflow');
+
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json());
+
+const projectId = 'YOUR_PROJECT_ID'; // Укажите ваш Project ID в Dialogflow
+const sessionId = '123456'; // Произвольный идентификатор сессии
+const languageCode = 'ru'; // Язык запросов
+
+const sessionClient = new dialogflow.SessionsClient();
+
+app.post('/query', async (req, res) => {
+  const { message } = req.body;
+
+  const sessionPath = sessionClient.sessionPath(projectId, sessionId);
+
+  const request = {
+    session: sessionPath,
+    queryInput: {
+      text: {
+        text: message,
+        languageCode: languageCode,
+      },
+    },
+  };
+
+  try {
+    const responses = await sessionClient.detectIntent(request);
+    const result = responses[0].queryResult;
+    res.json({ response: result.fulfillmentText });
+  } catch (err) {
+    console.error('Ошибка:', err);
+    res.status(500).json({ error: 'Произошла ошибка при обработке запроса' });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Сервер запущен на порту ${port}`);
+});
+
+</script>
+
+</body>
+</html>
