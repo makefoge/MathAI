@@ -94,7 +94,7 @@
   <div class="chat-messages" id="chatMessages">
     <!-- Приветственное сообщение -->
     <div class="message bot-message">
-      <span class="message-content">Здравствуйте, я MathAI я бот AI могу умножать делить суммировать вычислять.</span>
+      <span class="message-content">Здравствуйте, я MathAI я бот AI меня создал Мейрам что я могу все что есть в математике конечно я еще не готов я еще обучаюсь так что могут быть ошибки пожайлуста используйте точки в десятичных дробях в деление используйте : умножение * а сложение + вычитание - подсказка.</span>
     </div>
   </div>
   <div class="input-container">
@@ -158,13 +158,20 @@
   }
 
   function calculateResult(expression) {
-    try {
-      var result = eval(expression);
-      return 'Ответ: ' + result;
-    } catch (error) {
-      return 'Извините я вас не понимаю.';
+  // Заменяем символ ":" на "/" для выполнения деления
+  expression = expression.replace(/:/g, '/');
+
+  try {
+    var result = eval(expression);
+    if(Number.isInteger(result)) {
+      return 'Ответ: ' + result.toFixed(0);
+    } else {
+      return 'Ответ: ' + result.toFixed(2);
     }
+  } catch (error) {
+    return 'Извините, я вас не понимаю.';
   }
+}
   const express = require('express');
 const bodyParser = require('body-parser');
 const dialogflow = require('dialogflow');
